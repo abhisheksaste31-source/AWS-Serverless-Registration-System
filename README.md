@@ -1,572 +1,507 @@
-# AWS Serverless Registration System
+# 🚀 AWS Serverless Registration System
+
+A serverless user registration application built using **Amazon S3, Amazon API Gateway, AWS Lambda, Amazon RDS for MySQL, AWS IAM, and Amazon CloudWatch**.
+
+This project demonstrates a complete serverless registration workflow where users access a static registration website hosted on Amazon S3. Registration requests are sent through Amazon API Gateway to AWS Lambda, which processes the request and stores registration data in an Amazon RDS MySQL database.
+
+---
 
 ## 📌 Project Overview
 
-The **AWS Serverless Registration System** is a cloud-based web application that allows users to submit their registration details through a web interface. The application uses AWS serverless services to process, store, and manage registration data without requiring a traditional backend server.
+This project demonstrates how a web application can be built using a serverless architecture on AWS.
 
-The project demonstrates how AWS services can be integrated to build a scalable, highly available, and cost-effective serverless application.
+The frontend is hosted as a static website on **Amazon S3**.
 
----
-
-## 🏗️ Architecture
+When a user submits the registration form:
 
 ```text
-                    ┌──────────────────┐
-                    │      User        │
-                    │   Web Browser    │
-                    └────────┬─────────┘
-                             │
-                             ▼
-                    ┌──────────────────┐
-                    │    Amazon S3     │
-                    │ Static Website   │
-                    └────────┬─────────┘
-                             │
-                             ▼
-                    ┌──────────────────┐
-                    │   API Gateway    │
-                    │   REST API       │
-                    └────────┬─────────┘
-                             │
-                             ▼
-                    ┌──────────────────┐
-                    │  AWS Lambda      │
-                    │ Backend Logic    │
-                    └────────┬─────────┘
-                             │
-                             ▼
-                    ┌──────────────────┐
-                    │   Amazon         │
-                    │   DynamoDB       │
-                    │ Registration DB  │
-                    └──────────────────┘
-```
+User
+  ↓
+Amazon S3
+  ↓
+Amazon API Gateway
+  ↓
+AWS Lambda
+  ↓
+Amazon RDS MySQL
+  ↓
+regdb → users
+🏗️ AWS Architecture
 
----
+Architecture Flow
+                   Internet User
+                         │
+                         ▼
+                ┌──────────────────┐
+                │    Amazon S3     │
+                │  Static Website  │
+                │    index.html    │
+                └────────┬─────────┘
+                         │
+                    HTTPS / POST
+                         │
+                         ▼
+                ┌──────────────────┐
+                │  API Gateway     │
+                │   HTTP API       │
+                │ POST /register   │
+                └────────┬─────────┘
+                         │
+                         ▼
+                ┌──────────────────┐
+                │   AWS Lambda     │
+                │  Python Backend  │
+                │     regUser      │
+                └────────┬─────────┘
+                         │
+                   MySQL Connection
+                         │
+                         ▼
+                ┌──────────────────┐
+                │   Amazon RDS     │
+                │      MySQL       │
+                │      regdb       │
+                └────────┬─────────┘
+                         │
+                         ▼
+                ┌──────────────────┐
+                │   users Table    │
+                │------------------│
+                │ id               │
+                │ name             │
+                │ email            │
+                │ password         │
+                └──────────────────┘
+☁️ AWS Services Used
+AWS Service	Purpose
+Amazon S3	Hosts the static frontend website
+Amazon API Gateway	Provides the HTTP API endpoint
+AWS Lambda	Executes backend registration logic
+Amazon RDS for MySQL	Stores registration data
+AWS IAM	Provides Lambda execution permissions
+Amazon CloudWatch	Provides Lambda monitoring and logs
+🔄 Application Workflow
+1. User opens the S3 hosted website
+                ↓
+2. Registration form is displayed
+                ↓
+3. User enters Name, Email and Password
+                ↓
+4. Frontend sends POST request
+                ↓
+5. API Gateway receives the request
+                ↓
+6. API Gateway invokes Lambda
+                ↓
+7. Lambda processes the request
+                ↓
+8. Lambda connects to RDS MySQL
+                ↓
+9. Data is inserted into users table
+                ↓
+10. Lambda returns success response
+                ↓
+11. User sees registration success
+                ↓
+12. Data is verified in MySQL
+🗄️ Amazon RDS MySQL
 
-## ☁️ AWS Services Used
+Amazon RDS for MySQL is used as the persistent database layer.
 
-| AWS Service        | Purpose                            |
-| ------------------ | ---------------------------------- |
-| Amazon S3          | Hosts the static frontend          |
-| Amazon API Gateway | Provides REST API endpoints        |
-| AWS Lambda         | Executes backend application logic |
-| Amazon DynamoDB    | Stores registration information    |
-| AWS IAM            | Manages permissions and access     |
-| Amazon CloudWatch  | Monitoring and Lambda logs         |
+Database Configuration
+Database Engine : MySQL
+Database Name   : regdb
+Table           : users
+Database Structure
+regdb
+ │
+ └── users
+      ├── id
+      ├── name
+      ├── email
+      └── password
+Users Table
+Column	Data Type	Description
+id	INT	Primary Key
+name	VARCHAR(100)	User name
+email	VARCHAR(100)	User email
+password	VARCHAR(100)	User password
+⚡ AWS Lambda
 
----
+AWS Lambda is used as the backend service for processing registration requests.
 
-## ✨ Features
+Lambda Configuration
+Function Name : regUser
+Runtime       : Python
+Architecture  : x86_64
+Lambda Responsibilities
+Receives requests from API Gateway
+Handles CORS requests
+Reads JSON request data
+Connects to RDS MySQL
+Inserts user registration data
+Commits the database transaction
+Returns a success or error response
+Lambda Source Code
+lambda/lambda_function.py
+🔐 Lambda Environment Variables
 
-* User registration form
-* Serverless backend
-* REST API integration
-* Registration data stored in DynamoDB
-* Static frontend hosting using Amazon S3
-* No EC2 server required
-* Automatic Lambda scaling
-* IAM-based access control
-* CloudWatch logging and monitoring
-* Highly scalable architecture
-* Pay-per-use serverless model
+Database connection details are configured using Lambda environment variables.
 
----
+DB_HOST
+DB_USER
+DB_PASSWORD
+DB_NAME
 
-## 📁 Project Structure
+⚠️ Never commit database passwords, API keys, AWS credentials, or other secrets to GitHub.
 
-```text
-AWS-Serverless-Registration-System/
-│
-├── README.md
-│
-├── frontend/
-│   ├── index.html
-│   ├── style.css
-│   └── script.js
-│
-├── lambda/
-│   └── registration-function.py
-│
-└── screenshots/
-    ├── s3-bucket.png
-    ├── api-gateway.png
-    ├── lambda.png
-    ├── dynamodb.png
-    └── application.png
-```
+🌐 Amazon API Gateway
 
----
+Amazon API Gateway provides the HTTP endpoint used by the frontend.
 
-# 🚀 Deployment Steps
+API Configuration
+API Type       : HTTP API
+API Name       : regapi
+Route          : POST /register
+Integration    : AWS Lambda
+Lambda         : regUser
+Stage          : regstage
+API Request Flow
+Frontend
+   │
+   │ POST /register
+   ▼
+API Gateway
+   │
+   ▼
+AWS Lambda
+   │
+   ▼
+Amazon RDS MySQL
+🌍 CORS Configuration
 
-## 1. Create DynamoDB Table
-
-Open the AWS Management Console and navigate to **Amazon DynamoDB**.
-
-Create a table with:
-
-```text
-Table Name:
-Registrations
-```
-
-Create the required partition key according to the Lambda application's configuration.
+CORS is configured to allow the S3-hosted frontend to communicate with API Gateway.
 
 Example:
 
-```text
-Primary Key:
-id
-```
+Access-Control-Allow-Origin  : *
+Access-Control-Allow-Headers : content-type
+Access-Control-Allow-Methods : POST, OPTIONS
 
-Use a suitable data type such as:
+🔐 For production applications, replace * with the specific frontend origin.
 
-```text
-String
-```
+🪣 Amazon S3 Static Website
 
----
+Amazon S3 is used to host the static frontend.
 
-## 2. Create Lambda Function
+Frontend Structure
+frontend/
+└── index.html
 
-Go to:
+The frontend communicates with API Gateway using JavaScript.
 
-```text
-AWS Console
-→ Lambda
-→ Create function
-```
+🖥️ Registration Page
 
-Select:
+The application provides a simple registration interface.
 
-```text
-Author from scratch
-```
-
-Example configuration:
-
-```text
-Function name:
-registration-function
-```
-
-Choose the appropriate runtime for the Lambda code.
-
-The Lambda function receives registration data from API Gateway and stores it in DynamoDB.
-
----
-
-## 3. Lambda Backend Logic
-
-The Lambda function performs the following operations:
-
-```text
-Receive API Request
-        ↓
-Read Registration Data
-        ↓
-Validate Input
-        ↓
-Generate Registration ID
-        ↓
-Store Data in DynamoDB
-        ↓
-Return API Response
-```
-
-Example registration information:
-
-```text
+Registration Fields
 Name
 Email
-Mobile
-```
+Password
 
----
+Example request:
 
-## 4. Configure IAM Permissions
+{
+    "name": "John",
+    "email": "john@example.com",
+    "password": "example-password"
+}
+✅ Registration Success
 
-The Lambda execution role requires permission to access DynamoDB.
+After successful registration, Lambda returns a success response.
 
-Required permission example:
+Example:
 
-```text
-dynamodb:PutItem
-dynamodb:GetItem
-dynamodb:Scan
-```
+{
+    "message": "User registered successfully"
+}
+🗃️ Database Verification
 
-The permissions should be granted only to the resources required by the application.
+After registration, the data can be verified in the RDS MySQL database.
 
----
+Run:
 
-## 5. Create API Gateway
+USE regdb;
 
-Open:
+SELECT * FROM users;
 
-```text
-AWS Console
-→ API Gateway
-→ Create API
-```
+The newly registered user should appear in the users table.
 
-Create an API and configure a route such as:
+🧪 Testing
 
-```text
+The application was tested using the complete end-to-end workflow.
+
+Test Flow
+S3 Website
+   ↓
+Registration Form
+   ↓
+API Gateway
+   ↓
+AWS Lambda
+   ↓
+RDS MySQL
+   ↓
+users Table
+Test Results
+✅ S3 website loads successfully
+✅ Registration form works
+✅ API Gateway receives POST request
+✅ Lambda processes the request
+✅ Lambda connects to RDS MySQL
+✅ User data is inserted into database
+✅ Success response is returned
+✅ Database data can be verified using SQL
+🔒 Security
+
+Basic AWS security practices:
+
+Database credentials are configured through Lambda environment variables.
+AWS credentials are not stored in source code.
+Sensitive files should be excluded using .gitignore.
+CORS is configured for frontend communication.
+Lambda uses an IAM execution role.
+RDS access should be controlled using Security Groups.
+Private keys such as .pem files should never be uploaded to GitHub.
+Production Recommendation
+
+For production:
+
+Passwords should be securely hashed.
+AWS Secrets Manager should be considered for database credentials.
+CORS should be restricted to trusted origins.
+RDS should preferably remain private.
+HTTPS should be used for application communication.
+📦 Lambda Dependencies
+
+requirements.txt:
+
+mysql-connector-python
+
+Install:
+
+pip install mysql-connector-python -t .
+🚀 Deployment Steps
+Step 1 — Create RDS MySQL
+
+Create an Amazon RDS MySQL instance.
+
+Create/use:
+
+regdb
+
+Create the table:
+
+USE regdb;
+
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100),
+    email VARCHAR(100),
+    password VARCHAR(100)
+);
+Step 2 — Create IAM Role
+
+Create an IAM role for Lambda and attach the required Lambda permissions.
+
+Example:
+
+Role Name: reg-role
+Step 3 — Prepare Lambda Package
+
+Install the MySQL connector:
+
+pip install mysql-connector-python -t .
+
+Package the Lambda code and dependencies into a ZIP file.
+
+Step 4 — Create Lambda Function
+Function Name : regUser
+Runtime       : Python
+Architecture  : x86_64
+
+Upload the Lambda deployment package.
+
+Step 5 — Configure Environment Variables
+DB_HOST
+DB_USER
+DB_PASSWORD
+DB_NAME
+Step 6 — Create API Gateway
+
+Create an HTTP API:
+
+API Name: regapi
+
+Create route:
+
 POST /register
-```
 
-Connect the route to:
+Connect it to:
 
-```text
-AWS Lambda
-→ registration-function
-```
+AWS Lambda → regUser
 
----
+Create stage:
 
-## 6. Configure CORS
+regstage
 
-Enable CORS for the API so that the frontend hosted on Amazon S3 can communicate with API Gateway.
+Configure CORS.
+
+Step 7 — Configure Frontend
+
+Update the API Gateway endpoint in:
+
+frontend/index.html
 
 Example:
 
-```text
-Allowed Origins:
-*
+const API_URL =
+"https://YOUR_API_ID.execute-api.ap-south-1.amazonaws.com/regstage/register";
+Step 8 — Create S3 Static Website
 
-Allowed Methods:
-POST
-OPTIONS
-```
+Create an S3 bucket and upload:
 
-For production environments, replace `*` with the actual website origin.
-
----
-
-## 7. Deploy API
-
-Create a deployment stage such as:
-
-```text
-prod
-```
-
-After deployment, API Gateway provides an invoke URL similar to:
-
-```text
-https://xxxxxxxxxx.execute-api.ap-south-1.amazonaws.com/prod
-```
-
-Use the correct API URL in the frontend JavaScript file.
-
----
-
-# 🌐 Frontend Configuration
-
-The frontend contains:
-
-```text
 index.html
-style.css
-script.js
-```
 
-The JavaScript sends registration data to API Gateway.
+Enable static website hosting.
 
-Example flow:
+Step 9 — Test Application
 
-```text
-HTML Form
-    ↓
-JavaScript
-    ↓
+Open the S3 website URL and enter:
+
+Name
+Email
+Password
+
+Click:
+
+Register
+
+Expected flow:
+
+S3
+ ↓
 API Gateway
-    ↓
+ ↓
 Lambda
-    ↓
-DynamoDB
-```
+ ↓
+RDS MySQL
+Step 10 — Verify Database
 
-Update the API endpoint in:
+Connect to RDS MySQL:
 
-```text
-script.js
-```
+USE regdb;
 
-Example:
+SELECT * FROM users;
+📁 Project Structure
+AWS-Serverless-Registration-System/
+│
+├── frontend/
+│   └── index.html
+│
+├── lambda/
+│   ├── lambda_function.py
+│   └── requirements.txt
+│
+├── database/
+│   └── schema.sql
+│
+├── screenshots/
+│   ├── 01-architecture-diagram.png
+│   ├── 02-rds-mysql.png
+│   ├── 03-lambda-function.png
+│   ├── 04-api-gateway.png
+│   ├── 05-s3-static-website.png
+│   ├── 06-registration-page.png
+│   └── 07-registration-success-database.png
+│
+├── .gitignore
+│
+└── README.md
+📸 Project Screenshots
+1. AWS Architecture
 
-```javascript
-const API_URL = "YOUR_API_GATEWAY_URL";
-```
+2. Amazon RDS MySQL
 
-Replace the placeholder with the deployed API Gateway URL.
+3. AWS Lambda
 
----
+4. Amazon API Gateway
 
-# 🪣 Amazon S3 Static Website Hosting
+5. Amazon S3 Static Website
 
-Create an S3 bucket for the frontend.
+6. Registration Page
 
-Example:
+7. Registration Success & Database Verification
 
-```text
-aws-serverless-registration-website
-```
-
-Upload:
-
-```text
-index.html
-style.css
-script.js
-```
-
-Configure the bucket for static website hosting if using the S3 website endpoint.
-
-For a production deployment, CloudFront can be placed in front of S3 to provide HTTPS and improved global delivery.
-
----
-
-# 🔄 Application Flow
-
-```text
-1. User opens website
-          ↓
-2. Website loads from Amazon S3
-          ↓
-3. User enters registration details
-          ↓
-4. JavaScript sends POST request
-          ↓
-5. API Gateway receives request
-          ↓
-6. API Gateway invokes Lambda
-          ↓
-7. Lambda validates the data
-          ↓
-8. Lambda stores registration in DynamoDB
-          ↓
-9. DynamoDB returns success
-          ↓
-10. Lambda sends response
-          ↓
-11. API Gateway returns response
-          ↓
-12. User sees registration success message
-```
-
----
-
-# 🔐 Security
-
-The project uses AWS IAM to control access between AWS services.
-
-Recommended security practices:
-
-* Follow least-privilege IAM permissions
-* Enable HTTPS for production
-* Restrict API Gateway CORS origins
-* Do not expose AWS access keys in frontend code
-* Enable CloudWatch logging
-* Validate user input in Lambda
-* Use appropriate DynamoDB permissions
-
----
-
-# 📊 Monitoring
-
-AWS CloudWatch can be used to monitor Lambda execution.
-
-Useful metrics include:
-
-```text
-Invocations
-Errors
-Duration
-Throttles
-Concurrent Executions
-```
-
-Lambda logs can be viewed through:
-
-```text
-AWS Lambda
-→ Monitor
-→ View CloudWatch logs
-```
-
----
-
-# 🧪 Testing
-
-Test the complete application using the following flow:
-
-```text
-Open Website
-      ↓
-Enter Name
-      ↓
-Enter Email
-      ↓
-Enter Mobile
-      ↓
-Click Register
-      ↓
-Check Success Message
-      ↓
-Open DynamoDB
-      ↓
-Verify Registration Record
-```
-
----
-
-# 🛠️ Technologies Used
-
-### Frontend
-
-```text
-HTML5
-CSS3
+🧰 Technologies Used
+Frontend
+HTML
+CSS
 JavaScript
-```
-
-### Backend
-
-```text
+Backend
+Python
 AWS Lambda
-API Gateway
-```
-
-### Database
-
-```text
-Amazon DynamoDB
-```
-
-### Cloud
-
-```text
+Database
+Amazon RDS
+MySQL
+AWS Services
 Amazon S3
+Amazon API Gateway
+AWS Lambda
+Amazon RDS for MySQL
 AWS IAM
 Amazon CloudWatch
-```
+Version Control
+Git
+GitHub
+🎯 Key Learning Outcomes
+Building serverless applications on AWS
+Hosting static websites using Amazon S3
+Creating HTTP APIs using API Gateway
+Developing backend logic using AWS Lambda
+Connecting Lambda with Amazon RDS MySQL
+Configuring IAM roles and permissions
+Configuring CORS
+Working with Lambda environment variables
+Deploying Python dependencies to Lambda
+Testing an end-to-end AWS application
+Managing AWS projects using Git and GitHub
+⭐ Project Highlights
+Serverless Architecture
+        +
+Amazon S3
+        +
+API Gateway
+        +
+AWS Lambda
+        +
+Amazon RDS MySQL
+        +
+IAM
+        +
+CloudWatch
+        =
+Complete Serverless Registration System
+👨‍💻 Author
 
----
-
-# 💡 Key Learning Outcomes
-
-Through this project, I learned:
-
-* How to build serverless applications on AWS
-* How Amazon S3 hosts static websites
-* How API Gateway exposes REST APIs
-* How Lambda executes backend logic
-* How DynamoDB stores application data
-* How IAM controls AWS resource access
-* How CloudWatch monitors serverless applications
-* How multiple AWS services communicate with each other
-* How to design scalable cloud architectures
-
----
-
-# 📸 Project Screenshots
-
-Add your project screenshots inside the `screenshots` folder.
-
-Recommended screenshots:
-
-```text
-screenshots/
-│
-├── s3-bucket.png
-├── api-gateway.png
-├── lambda-function.png
-├── dynamodb-table.png
-├── iam-role.png
-├── cloudwatch.png
-└── application.png
-```
-
-Then add them to this README using:
-
-```markdown
-## 📸 Screenshots
-
-### Application
-
-![Application](screenshots/application.png)
-
-### Amazon S3
-
-![S3](screenshots/s3-bucket.png)
-
-### API Gateway
-
-![API Gateway](screenshots/api-gateway.png)
-
-### AWS Lambda
-
-![Lambda](screenshots/lambda-function.png)
-
-### DynamoDB
-
-![DynamoDB](screenshots/dynamodb-table.png)
-
-### CloudWatch
-
-![CloudWatch](screenshots/cloudwatch.png)
-```
-
----
-
-# 🎯 Final Architecture
-
-```text
-                         USER
-                           │
-                           ▼
-                  ┌─────────────────┐
-                  │  Amazon S3       │
-                  │ Static Frontend  │
-                  └────────┬────────┘
-                           │
-                           ▼
-                  ┌─────────────────┐
-                  │  API Gateway    │
-                  │   REST API      │
-                  └────────┬────────┘
-                           │
-                           ▼
-                  ┌─────────────────┐
-                  │  AWS Lambda     │
-                  │ Backend Logic   │
-                  └────────┬────────┘
-                           │
-                           ▼
-                  ┌─────────────────┐
-                  │ Amazon DynamoDB │
-                  │ Registration DB │
-                  └─────────────────┘
-
-          IAM → Access Control
-          CloudWatch → Monitoring & Logs
-```
-
----
-
-# 👨‍💻 Project Author
-
-**Abhishek Saste**
+Abhishek Saste
 
 Cloud & DevOps Enthusiast
 
----
+GitHub:
 
-## ⭐ Conclusion
+https://github.com/abhisheksaste31-source
 
-The **AWS Serverless Registration System** demonstrates a complete serverless application architecture using AWS managed services. By using S3, API Gateway, Lambda, and DynamoDB, the application can handle user registrations without managing traditional servers such as EC2.
+📄 License
 
-This project provides practical experience with **AWS Serverless Architecture, API Integration, Database Management, IAM Security, and Cloud Monitoring**.
+This project is created for educational and demonstration purposes.
